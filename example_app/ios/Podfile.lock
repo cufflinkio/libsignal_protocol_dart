@@ -1,0 +1,29 @@
+PODS:
+  - 25519 (2.0.2)
+  - Flutter (1.0.0)
+  - pm_curve25519 (0.5.7):
+    - 25519 (~> 2.0.2)
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - pm_curve25519 (from `.symlinks/plugins/pm_curve25519/ios`)
+
+SPEC REPOS:
+  trunk:
+    - '25519'
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  pm_curve25519:
+    :path: ".symlinks/plugins/pm_curve25519/ios"
+
+SPEC CHECKSUMS:
+  '25519': dc4bad7e2dbcbf1efa121068a705a44cd98c80fc
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+  pm_curve25519: 8a8ae20024c5ecd254d85da0659471fccfa417c9
+
+PODFILE CHECKSUM: a75497545d4391e2d394c3668e20cfb1c2bbd4aa
+
+COCOAPODS: 1.9.3
