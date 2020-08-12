@@ -22,8 +22,12 @@ class SenderKeyMessage extends CiphertextMessage {
   Uint8List _ciphertext;
   Uint8List _serialized;
 
-  SenderKeyMessage(int keyId, int iteration, Uint8List ciphertext,
-      ECPrivateKey signatureKey) {
+  SenderKeyMessage._();
+
+  static Future<SenderKeyMessage> create(int keyId, int iteration,
+      Uint8List ciphertext, ECPrivateKey signatureKey) async {
+    var instance = SenderKeyMessage._();
+
     var version = Uint8List.fromList([
       ByteUtil.intsToByteHighAndLow(
           CiphertextMessage.CURRENT_VERSION, CiphertextMessage.CURRENT_VERSION)
@@ -33,13 +37,14 @@ class SenderKeyMessage extends CiphertextMessage {
       ..iteration = iteration
       ..ciphertext = List.from(ciphertext);
     var messageList = message.writeToBuffer();
-    var signature =
-        _getSignature(signatureKey, ByteUtil.combine([version, messageList]));
-    _serialized = ByteUtil.combine([version, messageList, signature]);
-    _messageVersion = CiphertextMessage.CURRENT_VERSION;
-    _keyId = keyId;
-    _iteration = iteration;
-    _ciphertext = ciphertext;
+    var signature = await _getSignature(
+        signatureKey, ByteUtil.combine([version, messageList]));
+    instance._serialized = ByteUtil.combine([version, messageList, signature]);
+    instance._messageVersion = CiphertextMessage.CURRENT_VERSION;
+    instance._keyId = keyId;
+    instance._iteration = iteration;
+    instance._ciphertext = ciphertext;
+    return instance;
   }
 
   SenderKeyMessage.fromSerialized(Uint8List serialized) {
@@ -74,7 +79,8 @@ class SenderKeyMessage extends CiphertextMessage {
     _ciphertext = Uint8List.fromList(senderKeyMessage.ciphertext);
   }
 
-  Uint8List _getSignature(ECPrivateKey signatureKey, Uint8List serialized) {
+  static Future<Uint8List> _getSignature(
+      ECPrivateKey signatureKey, Uint8List serialized) {
     try {
       return Curve.calculateSignature(signatureKey, serialized);
     } on InvalidKeyIdException catch (e) {
@@ -88,11 +94,11 @@ class SenderKeyMessage extends CiphertextMessage {
 
   Uint8List get ciphertext => _ciphertext;
 
-  void verifySignature(ECPublicKey signatureKey) {
+  Future<void> verifySignature(ECPublicKey signatureKey) async {
     try {
       var parts = ByteUtil.splitTwo(
           _serialized, _serialized.length - SIGNATURE_LENGTH, SIGNATURE_LENGTH);
-      if (!Curve.verifySignature(signatureKey, parts[0], parts[1])) {
+      if (!await Curve.verifySignature(signatureKey, parts[0], parts[1])) {
         throw InvalidMessageException('Invalid signature!');
       }
     } on InvalidKeyException catch (e) {

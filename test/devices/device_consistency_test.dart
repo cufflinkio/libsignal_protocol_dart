@@ -16,10 +16,10 @@ void main() {
     return DeviceConsistencyCodeGenerator.generateFor(commitment, signatures);
   }
 
-  test('testDeviceConsistency', () {
-    var deviceOne = KeyHelper.generateIdentityKeyPair();
-    var deviceTwo = KeyHelper.generateIdentityKeyPair();
-    var deviceThree = KeyHelper.generateIdentityKeyPair();
+  test('testDeviceConsistency', () async {
+    var deviceOne = await KeyHelper.generateIdentityKeyPair();
+    var deviceTwo = await KeyHelper.generateIdentityKeyPair();
+    var deviceThree = await KeyHelper.generateIdentityKeyPair();
 
     var keyList = <IdentityKey>[];
     keyList.add(deviceOne.getPublicKey());

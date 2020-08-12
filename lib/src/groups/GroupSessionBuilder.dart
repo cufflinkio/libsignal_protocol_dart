@@ -23,7 +23,8 @@ class GroupSessionBuilder {
     _senderKeyStore.storeSenderKey(senderKeyName, senderKeyRecord);
   }
 
-  SenderKeyDistributionMessageWrapper create(SenderKeyName senderKeyName) {
+  Future<SenderKeyDistributionMessageWrapper> create(
+      SenderKeyName senderKeyName) async {
     // TODO sync
     try {
       var senderKeyRecord = _senderKeyStore.loadSenderKey(senderKeyName);
@@ -32,7 +33,7 @@ class GroupSessionBuilder {
             KeyHelper.generateSenderKeyId(),
             0,
             KeyHelper.generateSenderKey(),
-            KeyHelper.generateSenderSigningKey());
+            await KeyHelper.generateSenderSigningKey());
         _senderKeyStore.storeSenderKey(senderKeyName, senderKeyRecord);
       }
       var state = senderKeyRecord.getSenderKeyState();

@@ -1,19 +1,22 @@
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:libsignal_protocol_dart/src/ecc/CurveAlgorithm25519.dart';
 import '../InvalidKeyException.dart';
+import 'CurveAlgorithm.dart';
 import 'DjbECPrivateKey.dart';
 import 'DjbECPublicKey.dart';
 import 'ECKeyPair.dart';
 import 'ECPrivateKey.dart';
 import 'ECPublicKey.dart';
-import 'SignCurve25519.dart';
 
 class Curve {
   static const int djbType = 0x05;
 
-  static ECKeyPair generateKeyPair() {
-    final keyPair = x25519.newKeyPairSync();
+  static CurveAlgorithm algorithm = CurveAlgorithmX25519();
+
+  static Future<ECKeyPair> generateKeyPair() async {
+    final keyPair = await algorithm.newKeyPairSync();
     return ECKeyPair(
         DjbECPublicKey(Uint8List.fromList(keyPair.publicKey.bytes)),
         DjbECPrivateKey(Uint8List.fromList(keyPair.privateKey.extractSync())));
@@ -64,7 +67,7 @@ class Curve {
     }
 
     if (publicKey.getType() == djbType) {
-      var secretKey = x25519.sharedSecretSync(
+      var secretKey = algorithm.sharedSecretSync(
         localPrivateKey: PrivateKey((privateKey as DjbECPrivateKey).privateKey),
         remotePublicKey: PublicKey((publicKey as DjbECPublicKey).publicKey),
       );
@@ -74,7 +77,7 @@ class Curve {
     }
   }
 
-  static bool verifySignature(
+  static Future<bool> verifySignature(
       ECPublicKey signingKey, Uint8List message, Uint8List signature) {
     if (signingKey == null || message == null || signature == null) {
       throw InvalidKeyException('Values must not be null');
@@ -82,10 +85,10 @@ class Curve {
 
     if (signingKey.getType() == djbType) {
       if (signature.length != 64) {
-        return false;
+        return Future.value(false);
       }
 
-      return verify(
+      return algorithm.verify(
           (signingKey as DjbECPublicKey).publicKey, message, signature);
     } else {
       throw InvalidKeyException(
@@ -93,14 +96,15 @@ class Curve {
     }
   }
 
-  static Uint8List calculateSignature(
-      ECPrivateKey signingKey, Uint8List message) {
+  static Future<Uint8List> calculateSignature(
+      ECPrivateKey signingKey, Uint8List message) async {
     if (signingKey == null || message == null) {
       throw Exception('Values must not be null');
     }
 
     if (signingKey.getType() == djbType) {
-      return sign((signingKey as DjbECPrivateKey).serialize(), message);
+      return await algorithm.sign(
+          (signingKey as DjbECPrivateKey).serialize(), message);
     } else {
       throw Exception(
           'Unknown Signing Key type' + signingKey.getType().toString());

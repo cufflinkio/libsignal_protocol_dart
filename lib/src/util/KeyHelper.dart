@@ -13,8 +13,8 @@ import '../state/SignedPreKeyRecord.dart';
 import 'Medium.dart';
 
 class KeyHelper {
-  static IdentityKeyPair generateIdentityKeyPair() {
-    var keyPair = Curve.generateKeyPair();
+  static Future<IdentityKeyPair> generateIdentityKeyPair() async {
+    var keyPair = await Curve.generateKeyPair();
     var publicKey = IdentityKey(keyPair.publicKey);
     return IdentityKeyPair(publicKey, keyPair.privateKey);
   }
@@ -30,27 +30,28 @@ class KeyHelper {
     }
   }
 
-  static List<PreKeyRecord> generatePreKeys(int start, int count) {
+  static Future<List<PreKeyRecord>> generatePreKeys(
+      int start, int count) async {
     var results = <PreKeyRecord>[];
     start--;
     for (var i = 0; i < count; i++) {
-      results.add(PreKeyRecord(
-          ((start + i) % (Medium.MAX_VALUE - 1)) + 1, Curve.generateKeyPair()));
+      results.add(PreKeyRecord(((start + i) % (Medium.MAX_VALUE - 1)) + 1,
+          await Curve.generateKeyPair()));
     }
     return results;
   }
 
-  static SignedPreKeyRecord generateSignedPreKey(
-      IdentityKeyPair identityKeyPair, int signedPreKeyId) {
-    var keyPair = Curve.generateKeyPair();
-    var signature = Curve.calculateSignature(
+  static Future<SignedPreKeyRecord> generateSignedPreKey(
+      IdentityKeyPair identityKeyPair, int signedPreKeyId) async {
+    var keyPair = await Curve.generateKeyPair();
+    var signature = await Curve.calculateSignature(
         identityKeyPair.getPrivateKey(), keyPair.publicKey.serialize());
 
     return SignedPreKeyRecord(signedPreKeyId,
         Int64(DateTime.now().millisecondsSinceEpoch), keyPair, signature);
   }
 
-  static ECKeyPair generateSenderSigningKey() {
+  static Future<ECKeyPair> generateSenderSigningKey() {
     return Curve.generateKeyPair();
   }
 

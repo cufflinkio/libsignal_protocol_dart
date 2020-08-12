@@ -18,8 +18,8 @@ import '../util/ByteUtil.dart';
 import 'package:optional/optional.dart';
 
 class RatchetingSession {
-  static void initializeSession(
-      SessionState sessionState, SymmetricSignalProtocolParameters parameters) {
+  static Future<void> initializeSession(SessionState sessionState,
+      SymmetricSignalProtocolParameters parameters) async {
     if (isAlice(
         parameters.getOurBaseKey().publicKey, parameters.getTheirBaseKey())) {
       var aliceParameters = AliceSignalProtocolParameters.newBuilder();
@@ -32,7 +32,7 @@ class RatchetingSession {
           .setTheirSignedPreKey(parameters.getTheirBaseKey())
           .setTheirOneTimePreKey(Optional<ECPublicKey>.empty());
 
-      RatchetingSession.initializeSessionAlice(
+      await RatchetingSession.initializeSessionAlice(
           sessionState, aliceParameters.create());
     } else {
       var bobParameters = BobSignalProtocolParameters.newBuilder();
@@ -50,15 +50,15 @@ class RatchetingSession {
     }
   }
 
-  static void initializeSessionAlice(
-      SessionState sessionState, AliceSignalProtocolParameters parameters) {
+  static Future<void> initializeSessionAlice(SessionState sessionState,
+      AliceSignalProtocolParameters parameters) async {
     try {
       sessionState.sessionVersion = CiphertextMessage.CURRENT_VERSION;
       sessionState.remoteIdentityKey = parameters.getTheirIdentityKey();
       sessionState.localIdentityKey =
           parameters.getOurIdentityKey().getPublicKey();
 
-      var sendingRatchetKey = Curve.generateKeyPair();
+      var sendingRatchetKey = await Curve.generateKeyPair();
       var secrets = <int>[];
 
       secrets.addAll(getDiscontinuityBytes());

@@ -5,11 +5,17 @@ import 'package:libsignal_protocol_dart/src/state/impl/InMemorySignalProtocolSto
 import 'package:libsignal_protocol_dart/src/util/KeyHelper.dart';
 
 class TestInMemorySignalProtocolStore extends InMemorySignalProtocolStore {
-  TestInMemorySignalProtocolStore()
-      : super(_generateIdentityKeyPair(), _generateRegistrationId());
+  static Future<TestInMemorySignalProtocolStore> create() async {
+    return TestInMemorySignalProtocolStore._(
+        await _generateIdentityKeyPair(), _generateRegistrationId());
+  }
 
-  static IdentityKeyPair _generateIdentityKeyPair() {
-    var identityKeyPairKeys = Curve.generateKeyPair();
+  TestInMemorySignalProtocolStore._(
+      IdentityKeyPair identityKeyPair, int registrationId)
+      : super(identityKeyPair, registrationId);
+
+  static Future<IdentityKeyPair> _generateIdentityKeyPair() async {
+    var identityKeyPairKeys = await Curve.generateKeyPair();
 
     return IdentityKeyPair(IdentityKey(identityKeyPairKeys.publicKey),
         identityKeyPairKeys.privateKey);

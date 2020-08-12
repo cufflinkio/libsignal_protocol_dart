@@ -99,16 +99,17 @@ class SessionCipher {
     // }
   }
 
-  Uint8List decrypt(PreKeySignalMessage ciphertext) {
+  Future<Uint8List> decrypt(PreKeySignalMessage ciphertext) {
     return decryptWithCallback(ciphertext, () {}());
   }
 
-  Uint8List decryptWithCallback(
-      PreKeySignalMessage ciphertext, DecryptionCallback callback) {
+  Future<Uint8List> decryptWithCallback(
+      PreKeySignalMessage ciphertext, DecryptionCallback callback) async {
     // synchronized(SESSION_LOCK) {
     var sessionRecord = _sessionStore.loadSession(_remoteAddress);
     var unsignedPreKeyId = _sessionBuilder.process(sessionRecord, ciphertext);
-    var plaintext = _decrypt(sessionRecord, ciphertext.getWhisperMessage());
+    var plaintext =
+        await _decrypt(sessionRecord, ciphertext.getWhisperMessage());
 
     if (callback != null) {
       callback(plaintext);
@@ -124,19 +125,19 @@ class SessionCipher {
     // }
   }
 
-  Uint8List decryptFromSignal(SignalMessage cipherText) {
+  Future<Uint8List> decryptFromSignal(SignalMessage cipherText) {
     return decryptFromSignalWithCallback(cipherText, () {}());
   }
 
-  Uint8List decryptFromSignalWithCallback(
-      SignalMessage cipherText, DecryptionCallback callback) {
+  Future<Uint8List> decryptFromSignalWithCallback(
+      SignalMessage cipherText, DecryptionCallback callback) async {
     // synchronized(SESSION_LOCK) {
     if (!_sessionStore.containsSession(_remoteAddress)) {
       throw NoSessionException('No session for: $_remoteAddress');
     }
 
     var sessionRecord = _sessionStore.loadSession(_remoteAddress);
-    var plaintext = _decrypt(sessionRecord, cipherText);
+    var plaintext = await _decrypt(sessionRecord, cipherText);
 
     if (!_identityKeyStore.isTrustedIdentity(
         _remoteAddress,
@@ -159,7 +160,8 @@ class SessionCipher {
     // }
   }
 
-  Uint8List _decrypt(SessionRecord sessionRecord, SignalMessage cipherText) {
+  Future<Uint8List> _decrypt(
+      SessionRecord sessionRecord, SignalMessage cipherText) async {
     // synchronized(SESSION_LOCK) {
     var previousStates = sessionRecord.previousSessionStates;
     var exceptions = [];
@@ -167,7 +169,7 @@ class SessionCipher {
     try {
       var sessionState =
           SessionState.fromSessionState(sessionRecord.sessionState);
-      var plaintext = _decryptFromState(sessionState, cipherText);
+      var plaintext = await _decryptFromState(sessionState, cipherText);
 
       sessionRecord.setState(sessionState);
       return plaintext;
@@ -194,8 +196,8 @@ class SessionCipher {
     // }
   }
 
-  Uint8List _decryptFromState(
-      SessionState sessionState, SignalMessage ciphertextMessage) {
+  Future<Uint8List> _decryptFromState(
+      SessionState sessionState, SignalMessage ciphertextMessage) async {
     if (!sessionState.hasSenderChain()) {
       throw InvalidMessageException('Uninitialized session!');
     }
@@ -208,7 +210,7 @@ class SessionCipher {
 
     var theirEphemeral = ciphertextMessage.getSenderRatchetKey();
     var counter = ciphertextMessage.getCounter();
-    var chainKey = _getOrCreateChainKey(sessionState, theirEphemeral);
+    var chainKey = await _getOrCreateChainKey(sessionState, theirEphemeral);
     var messageKeys = _getOrCreateMessageKeys(
         sessionState, theirEphemeral, chainKey, counter);
 
@@ -240,8 +242,8 @@ class SessionCipher {
     // }
   }
 
-  ChainKey _getOrCreateChainKey(
-      SessionState sessionState, ECPublicKey theirEphemeral) {
+  Future<ChainKey> _getOrCreateChainKey(
+      SessionState sessionState, ECPublicKey theirEphemeral) async {
     try {
       if (sessionState.hasReceiverChain(theirEphemeral)) {
         return sessionState.getReceiverChainKey(theirEphemeral);
@@ -249,7 +251,7 @@ class SessionCipher {
         var rootKey = sessionState.getRootKey();
         var ourEphemeral = sessionState.getSenderRatchetKeyPair();
         var receiverChain = rootKey.createChain(theirEphemeral, ourEphemeral);
-        var ourNewEphemeral = Curve.generateKeyPair();
+        var ourNewEphemeral = await Curve.generateKeyPair();
         var senderChain =
             receiverChain.item1.createChain(theirEphemeral, ourNewEphemeral);
 

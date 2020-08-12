@@ -97,7 +97,7 @@ class SessionBuilder {
     }
   }
 
-  void processPreKeyBundle(PreKeyBundle preKey) {
+  Future<void> processPreKeyBundle(PreKeyBundle preKey) async {
     //synchronized (SessionCipher.SESSION_LOCK) {
     if (!_identityKeyStore.isTrustedIdentity(
         _remoteAddress, preKey.getIdentityKey(), Direction.SENDING)) {
@@ -106,7 +106,7 @@ class SessionBuilder {
     }
 
     if (preKey.getSignedPreKey() != null &&
-        !Curve.verifySignature(
+        !await Curve.verifySignature(
             preKey.getIdentityKey().publicKey,
             preKey.getSignedPreKey().serialize(),
             preKey.getSignedPreKeySignature())) {
@@ -118,7 +118,7 @@ class SessionBuilder {
     }
 
     var sessionRecord = _sessionStore.loadSession(_remoteAddress);
-    var ourBaseKey = Curve.generateKeyPair();
+    var ourBaseKey = await Curve.generateKeyPair();
     var theirSignedPreKey = preKey.getSignedPreKey();
     var theirOneTimePreKey = Optional.ofNullable(preKey.getPreKey());
     var theirOneTimePreKeyId = theirOneTimePreKey.isPresent
@@ -137,7 +137,7 @@ class SessionBuilder {
 
     if (!sessionRecord.isFresh()) sessionRecord.archiveCurrentState();
 
-    RatchetingSession.initializeSessionAlice(
+    await RatchetingSession.initializeSessionAlice(
         sessionRecord.sessionState, parameters.create());
 
     sessionRecord.sessionState.setUnacknowledgedPreKeyMessage(

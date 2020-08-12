@@ -26,13 +26,13 @@ void main() {
   final ALICE_ADDRESS = SignalProtocolAddress('+14151111111', 1);
   final BOB_ADDRESS = SignalProtocolAddress('+14152222222', 1);
 
-  test('testBasicPreKeyV2', () {
-    final aliceStore = TestInMemorySignalProtocolStore();
+  test('testBasicPreKeyV2', () async {
+    final aliceStore = await TestInMemorySignalProtocolStore.create();
     final aliceSessionBuilder =
         SessionBuilder.fromSignalStore(aliceStore, BOB_ADDRESS);
 
-    var bobStore = TestInMemorySignalProtocolStore();
-    var bobPreKeyPair = Curve.generateKeyPair();
+    var bobStore = await TestInMemorySignalProtocolStore.create();
+    var bobPreKeyPair = await Curve.generateKeyPair();
     var bobPreKey = PreKeyBundle(
         bobStore.getLocalRegistrationId(),
         1,
@@ -43,7 +43,7 @@ void main() {
         null,
         bobStore.getIdentityKeyPair().getPublicKey());
     try {
-      aliceSessionBuilder.processPreKeyBundle(bobPreKey);
+      await aliceSessionBuilder.processPreKeyBundle(bobPreKey);
       throw AssertionError('Should fail with missing unsigned prekey!');
     } on InvalidKeyException catch (e) {
       // Good!
@@ -51,8 +51,8 @@ void main() {
     }
   });
 
-  void runInteraction(
-      SignalProtocolStore aliceStore, SignalProtocolStore bobStore) {
+  Future<void> runInteraction(
+      SignalProtocolStore aliceStore, SignalProtocolStore bobStore) async {
     var aliceSessionCipher = SessionCipher.fromStore(aliceStore, BOB_ADDRESS);
     var bobSessionCipher = SessionCipher.fromStore(bobStore, ALICE_ADDRESS);
 
@@ -61,7 +61,7 @@ void main() {
 
     assert(aliceMessage.getType() == CiphertextMessage.WHISPER_TYPE);
 
-    var plaintext = bobSessionCipher.decryptFromSignal(
+    var plaintext = await bobSessionCipher.decryptFromSignal(
         SignalMessage.fromSerialized(aliceMessage.serialize()));
     assert(String.fromCharCodes(plaintext) == (originalMessage));
 
@@ -69,7 +69,7 @@ void main() {
 
     assert(bobMessage.getType() == CiphertextMessage.WHISPER_TYPE);
 
-    plaintext = aliceSessionCipher.decryptFromSignal(
+    plaintext = await aliceSessionCipher.decryptFromSignal(
         SignalMessage.fromSerialized(bobMessage.serialize()));
     assert(String.fromCharCodes(plaintext) == originalMessage);
 
@@ -81,7 +81,7 @@ void main() {
       var aliceLoopingMessage =
           aliceSessionCipher.encrypt(utf8.encode(loopingMessage));
 
-      var loopingPlaintext = bobSessionCipher.decryptFromSignal(
+      var loopingPlaintext = await bobSessionCipher.decryptFromSignal(
           SignalMessage.fromSerialized(aliceLoopingMessage.serialize()));
       assert(String.fromCharCodes(loopingPlaintext) == loopingMessage);
     }
@@ -94,7 +94,7 @@ void main() {
       var bobLoopingMessage =
           bobSessionCipher.encrypt(utf8.encode(loopingMessage));
 
-      var loopingPlaintext = aliceSessionCipher.decryptFromSignal(
+      var loopingPlaintext = await aliceSessionCipher.decryptFromSignal(
           SignalMessage.fromSerialized(bobLoopingMessage.serialize()));
       assert(String.fromCharCodes(loopingPlaintext) == loopingMessage);
     }
@@ -122,7 +122,7 @@ void main() {
       var aliceLoopingMessage =
           aliceSessionCipher.encrypt(utf8.encode(loopingMessage));
 
-      var loopingPlaintext = bobSessionCipher.decryptFromSignal(
+      var loopingPlaintext = await bobSessionCipher.decryptFromSignal(
           SignalMessage.fromSerialized(aliceLoopingMessage.serialize()));
       assert(String.fromCharCodes(loopingPlaintext) == loopingMessage);
     }
@@ -132,13 +132,13 @@ void main() {
       var bobLoopingMessage =
           bobSessionCipher.encrypt(utf8.encode(loopingMessage));
 
-      var loopingPlaintext = aliceSessionCipher.decryptFromSignal(
+      var loopingPlaintext = await aliceSessionCipher.decryptFromSignal(
           SignalMessage.fromSerialized(bobLoopingMessage.serialize()));
       assert(String.fromCharCodes(loopingPlaintext) == loopingMessage);
     }
 
     for (var aliceOutOfOrderMessage in aliceOutOfOrderMessages) {
-      var outOfOrderPlaintext = bobSessionCipher.decryptFromSignal(
+      var outOfOrderPlaintext = await bobSessionCipher.decryptFromSignal(
           SignalMessage.fromSerialized(
               aliceOutOfOrderMessage.item2.serialize()));
       assert(String.fromCharCodes(outOfOrderPlaintext) ==
@@ -146,15 +146,15 @@ void main() {
     }
   }
 
-  test('testBasicPreKeyV3', () {
-    var aliceStore = TestInMemorySignalProtocolStore();
+  test('testBasicPreKeyV3', () async {
+    var aliceStore = await TestInMemorySignalProtocolStore.create();
     var aliceSessionBuilder =
         SessionBuilder.fromSignalStore(aliceStore, BOB_ADDRESS);
 
-    final bobStore = TestInMemorySignalProtocolStore();
-    var bobPreKeyPair = Curve.generateKeyPair();
-    var bobSignedPreKeyPair = Curve.generateKeyPair();
-    var bobSignedPreKeySignature = Curve.calculateSignature(
+    final bobStore = await TestInMemorySignalProtocolStore.create();
+    var bobPreKeyPair = await Curve.generateKeyPair();
+    var bobSignedPreKeyPair = await Curve.generateKeyPair();
+    var bobSignedPreKeySignature = await Curve.calculateSignature(
         bobStore.getIdentityKeyPair().getPrivateKey(),
         bobSignedPreKeyPair.publicKey.serialize());
 
@@ -167,7 +167,7 @@ void main() {
         bobSignedPreKeyPair.publicKey,
         bobSignedPreKeySignature,
         bobStore.getIdentityKeyPair().getPublicKey());
-    aliceSessionBuilder.processPreKeyBundle(bobPreKey);
+    await aliceSessionBuilder.processPreKeyBundle(bobPreKey);
 
     assert(aliceStore.containsSession(BOB_ADDRESS));
     assert(
@@ -189,8 +189,8 @@ void main() {
             bobSignedPreKeyPair, bobSignedPreKeySignature));
 
     var bobSessionCipher = SessionCipher.fromStore(bobStore, ALICE_ADDRESS);
-    var plaintext =
-        bobSessionCipher.decryptWithCallback(incomingMessage, (plaintext) {
+    var plaintext = await bobSessionCipher.decryptWithCallback(incomingMessage,
+        (plaintext) {
       var result = utf8.decode(plaintext, allowMalformed: true);
       assert(originalMessage == result);
       assert(!bobStore.containsSession(ALICE_ADDRESS));
@@ -208,21 +208,21 @@ void main() {
         bobSessionCipher.encrypt(utf8.encode(originalMessage));
     assert(bobOutgoingMessage.getType() == CiphertextMessage.WHISPER_TYPE);
 
-    var alicePlaintext = aliceSessionCipher.decryptFromSignal(
+    var alicePlaintext = await aliceSessionCipher.decryptFromSignal(
         SignalMessage.fromSerialized(bobOutgoingMessage.serialize()));
     assert(
         utf8.decode(alicePlaintext, allowMalformed: true) == originalMessage);
 
-    runInteraction(aliceStore, bobStore);
+    await runInteraction(aliceStore, bobStore);
 
-    aliceStore = TestInMemorySignalProtocolStore();
+    aliceStore = await TestInMemorySignalProtocolStore.create();
     aliceSessionBuilder =
         SessionBuilder.fromSignalStore(aliceStore, BOB_ADDRESS);
     aliceSessionCipher = SessionCipher.fromStore(aliceStore, BOB_ADDRESS);
 
-    bobPreKeyPair = Curve.generateKeyPair();
-    bobSignedPreKeyPair = Curve.generateKeyPair();
-    bobSignedPreKeySignature = Curve.calculateSignature(
+    bobPreKeyPair = await Curve.generateKeyPair();
+    bobSignedPreKeyPair = await Curve.generateKeyPair();
+    bobSignedPreKeySignature = await Curve.calculateSignature(
         bobStore.getIdentityKeyPair().getPrivateKey(),
         bobSignedPreKeyPair.publicKey.serialize());
     bobPreKey = PreKeyBundle(
@@ -241,12 +241,12 @@ void main() {
         23,
         SignedPreKeyRecord(23, Int64(DateTime.now().millisecondsSinceEpoch),
             bobSignedPreKeyPair, bobSignedPreKeySignature));
-    aliceSessionBuilder.processPreKeyBundle(bobPreKey);
+    await aliceSessionBuilder.processPreKeyBundle(bobPreKey);
 
     outgoingMessage = aliceSessionCipher.encrypt(utf8.encode(originalMessage));
 
     try {
-      plaintext = bobSessionCipher
+      plaintext = await bobSessionCipher
           .decrypt(PreKeySignalMessage(outgoingMessage.serialize()));
       throw AssertionError("shouldn't be trusted!");
     } on UntrustedIdentityException catch (uie) {
@@ -254,7 +254,7 @@ void main() {
           PreKeySignalMessage(outgoingMessage.serialize()).getIdentityKey());
     }
 
-    plaintext = bobSessionCipher
+    plaintext = await bobSessionCipher
         .decrypt(PreKeySignalMessage(outgoingMessage.serialize()));
     assert(utf8.decode(plaintext, allowMalformed: true) == originalMessage);
 
@@ -262,30 +262,30 @@ void main() {
         bobStore.getLocalRegistrationId(),
         1,
         31337,
-        Curve.generateKeyPair().publicKey,
+        (await Curve.generateKeyPair()).publicKey,
         23,
         bobSignedPreKeyPair.publicKey,
         bobSignedPreKeySignature,
         aliceStore.getIdentityKeyPair().getPublicKey());
 
     try {
-      aliceSessionBuilder.processPreKeyBundle(bobPreKey);
+      await aliceSessionBuilder.processPreKeyBundle(bobPreKey);
       throw AssertionError("shoulnd't be trusted!");
     } on UntrustedIdentityException catch (uie) {
       // good
     }
   });
 
-  test('testBadSignedPreKeySignature', () {
-    var aliceStore = TestInMemorySignalProtocolStore();
+  test('testBadSignedPreKeySignature', () async {
+    var aliceStore = await TestInMemorySignalProtocolStore.create();
     var aliceSessionBuilder =
         SessionBuilder.fromSignalStore(aliceStore, BOB_ADDRESS);
 
-    var bobIdentityKeyStore = TestInMemoryIdentityKeyStore();
+    var bobIdentityKeyStore = await TestInMemoryIdentityKeyStore.create();
 
-    var bobPreKeyPair = Curve.generateKeyPair();
-    var bobSignedPreKeyPair = Curve.generateKeyPair();
-    var bobSignedPreKeySignature = Curve.calculateSignature(
+    var bobPreKeyPair = await Curve.generateKeyPair();
+    var bobSignedPreKeyPair = await Curve.generateKeyPair();
+    var bobSignedPreKeySignature = await Curve.calculateSignature(
         bobIdentityKeyStore.getIdentityKeyPair().getPrivateKey(),
         bobSignedPreKeyPair.publicKey.serialize());
 
@@ -307,7 +307,7 @@ void main() {
           bobIdentityKeyStore.getIdentityKeyPair().getPublicKey());
 
       try {
-        aliceSessionBuilder.processPreKeyBundle(bobPreKey);
+        await aliceSessionBuilder.processPreKeyBundle(bobPreKey);
         throw AssertionError('Accepted modified device key signature!');
       } on InvalidKeyException catch (ike) {
         // good
@@ -324,6 +324,6 @@ void main() {
         bobSignedPreKeySignature,
         bobIdentityKeyStore.getIdentityKeyPair().getPublicKey());
 
-    aliceSessionBuilder.processPreKeyBundle(bobPreKey);
+    await aliceSessionBuilder.processPreKeyBundle(bobPreKey);
   });
 }

@@ -6,13 +6,13 @@ void main() {
   install();
 }
 
-void install() {
-  var identityKeyPair = KeyHelper.generateIdentityKeyPair();
+Future<void> install() async {
+  var identityKeyPair = await KeyHelper.generateIdentityKeyPair();
   var registerationId = KeyHelper.generateRegistrationId(false);
 
-  var preKeys = KeyHelper.generatePreKeys(0, 110);
+  var preKeys = await KeyHelper.generatePreKeys(0, 110);
 
-  var signedPreKey = KeyHelper.generateSignedPreKey(identityKeyPair, 0);
+  var signedPreKey = await KeyHelper.generateSignedPreKey(identityKeyPair, 0);
 
   // ignore: unused_local_variable
   var sessionStore = InMemorySessionStore();

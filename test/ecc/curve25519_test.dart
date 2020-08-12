@@ -196,10 +196,10 @@ void main() {
     expect(sharedTwo, shared);
   });
 
-  test('testRandomAgreements', () {
+  test('testRandomAgreements', () async {
     for (var i = 0; i < 50; i++) {
-      var alice = Curve.generateKeyPair();
-      var bob = Curve.generateKeyPair();
+      var alice = await Curve.generateKeyPair();
+      var bob = await Curve.generateKeyPair();
 
       var sharedAlice =
           Curve.calculateAgreement(bob.publicKey, alice.privateKey);
@@ -209,7 +209,7 @@ void main() {
     }
   });
 
-  test('testSignature', () {
+  test('testSignature', () async {
     var aliceIdentityPrivate = Uint8List.fromList([
       0xc0,
       0x97,
@@ -388,7 +388,7 @@ void main() {
     var alicePublicKey = Curve.decodePoint(aliceIdentityPublic, 0);
     var aliceEphemeral = Curve.decodePoint(aliceEphemeralPublic, 0);
 
-    if (!Curve.verifySignature(
+    if (!await Curve.verifySignature(
         alicePublicKey, aliceEphemeral.serialize(), aliceSignature)) {
       throw AssertionError('Sig verification failed!');
     }
@@ -400,15 +400,15 @@ void main() {
 
       modifiedSignature[i] ^= 0x01;
 
-      if (Curve.verifySignature(
+      if (await Curve.verifySignature(
           alicePublicKey, aliceEphemeral.serialize(), modifiedSignature)) {
         throw AssertionError('Sig verification succeeded!');
       }
     }
   });
 
-  test('testDecodeSize', () {
-    var keyPair = Curve.generateKeyPair();
+  test('testDecodeSize', () async {
+    var keyPair = await Curve.generateKeyPair();
     var serializedPublic = keyPair.publicKey.serialize();
 
     var justRight = Curve.decodePoint(serializedPublic, 0);

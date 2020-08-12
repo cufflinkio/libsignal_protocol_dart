@@ -414,9 +414,9 @@ void main() {
         BOB_SCANNABLE_FINGERPRINT_V1);
   });
 
-  test('testMatchingFingerprints', () {
-    var aliceKeyPair = Curve.generateKeyPair();
-    var bobKeyPair = Curve.generateKeyPair();
+  test('testMatchingFingerprints', () async {
+    var aliceKeyPair = await Curve.generateKeyPair();
+    var bobKeyPair = await Curve.generateKeyPair();
 
     var aliceIdentityKey = IdentityKey(aliceKeyPair.publicKey);
     var bobIdentityKey = IdentityKey(bobKeyPair.publicKey);
@@ -451,10 +451,10 @@ void main() {
     expect(aliceFingerprint.displayableFingerprint.getDisplayText().length, 60);
   });
 
-  test('testMismatchingFingerprints', () {
-    var aliceKeyPair = Curve.generateKeyPair();
-    var bobKeyPair = Curve.generateKeyPair();
-    var mitmKeyPair = Curve.generateKeyPair();
+  test('testMismatchingFingerprints', () async {
+    var aliceKeyPair = await Curve.generateKeyPair();
+    var bobKeyPair = await Curve.generateKeyPair();
+    var mitmKeyPair = await Curve.generateKeyPair();
 
     var aliceIdentityKey = IdentityKey(aliceKeyPair.publicKey);
     var bobIdentityKey = IdentityKey(bobKeyPair.publicKey);
@@ -490,9 +490,9 @@ void main() {
         false);
   });
 
-  test('testMismatchingIdentifiers', () {
-    var aliceKeyPair = Curve.generateKeyPair();
-    var bobKeyPair = Curve.generateKeyPair();
+  test('testMismatchingIdentifiers', () async {
+    var aliceKeyPair = await Curve.generateKeyPair();
+    var bobKeyPair = await Curve.generateKeyPair();
 
     var aliceIdentityKey = IdentityKey(aliceKeyPair.publicKey);
     var bobIdentityKey = IdentityKey(bobKeyPair.publicKey);
